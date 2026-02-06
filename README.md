@@ -66,7 +66,7 @@ This image removes that overhead by shipping everything pre-baked, allowing pipe
 - Versioned tags (e.g. `1.0.0`)
 - `latest` → most recent stable release
 
-Each tag is published as a **multi-architecture manifest**, so Docker automatically pulls the correct image for your platform.
+Each tag is published as a **multi-architecture manifest**, so Docker automatically pulls the correct image for your platform. Also I am keping a version match against playwright image to avaoid any confusion. You may notice a minor verion difference bcz of maintenance.
 
 ---
 
