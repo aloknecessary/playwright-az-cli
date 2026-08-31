@@ -1,5 +1,5 @@
 # Base image: Microsoft Playwright (includes Node.js, npm, Playwright, and browsers)
-FROM mcr.microsoft.com/playwright:v1.59.1-jammy
+FROM mcr.microsoft.com/playwright:v1.60.0-jammy
 
 # Install Azure CLI
 RUN apt-get update \
