@@ -1,9 +1,9 @@
-name: Build and Push Playwright + Azure CLI Image
+name: Build and Push Playwright + AWS CLI Image
 
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "v*.*.*-aws"
 
 jobs:
   build-and-push:
@@ -12,13 +12,29 @@ jobs:
     steps:
       - name: Checkout source
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Ensure tag was created on aws branch
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          TAG_COMMIT=$(git rev-list -n 1 "$TAG_NAME")
+          git fetch origin aws --depth=1
+          AWS_COMMIT=$(git rev-parse origin/aws)
+
+          if [ "$TAG_COMMIT" != "$AWS_COMMIT" ]; then
+            echo "Tag $TAG_NAME does not point to the aws branch tip. Refusing to publish."
+            exit 1
+          fi
 
       - name: Extract version from tag
         id: version
         run: |
-          TAG_NAME=${GITHUB_REF#refs/tags/}
-          VERSION=${TAG_NAME#v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          TAG_NAME="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG_NAME#v}"
+          VERSION="${VERSION%-aws}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -32,18 +48,39 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build Docker image
+        uses: docker/build-push-action@v7.1.0
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: false
+          load: true
+          tags: |
+            aloknecessary/playwright-aws-cli:${{ steps.version.outputs.version }}
+            aloknecessary/playwright-aws-cli:latest
+
+      - name: Smoke test AWS image
+        run: |
+          docker run --rm aloknecessary/playwright-aws-cli:${{ steps.version.outputs.version }} bash -lc '
+            set -e
+            echo "Node: $(node --version)"
+            echo "npm: $(npm --version)"
+            echo "Playwright: $(npx playwright --version)"
+            echo "AWS CLI: $(aws --version)"
+          '
+
+      - name: Push Docker image
         uses: docker/build-push-action@v7.1.0
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            aloknecessary/playwright-az-cli:${{ steps.version.outputs.version }}
-            aloknecessary/playwright-az-cli:latest
+            aloknecessary/playwright-aws-cli:${{ steps.version.outputs.version }}
+            aloknecessary/playwright-aws-cli:latest
           labels: |
-            org.opencontainers.image.title=Playwright with Azure CLI
-            org.opencontainers.image.description=Custom Docker image with Microsoft Playwright and Azure CLI pre-installed
+            org.opencontainers.image.title=Playwright with AWS CLI
+            org.opencontainers.image.description=Custom Docker image with Microsoft Playwright and AWS CLI v2 pre-installed
             org.opencontainers.image.version=${{ steps.version.outputs.version }}
             org.opencontainers.image.source=https://github.com/aloknecessary/playwright-az-cli
             org.opencontainers.image.vendor=aloknecessary

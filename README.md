@@ -1,10 +1,10 @@
-# Playwright + Azure CLI Docker Image
+# Playwright + AWS CLI Docker Image
 
-A custom Docker image built on top of the official **Microsoft Playwright** image, with **Azure CLI pre-installed**.  
-This image is intended for CI/CD and automation workflows that require browser-based testing along with Azure operations in a single, ready-to-use container.
+A custom Docker image built on top of the official **Microsoft Playwright** image, with **AWS CLI v2 pre-installed**.  
+This image is intended for CI/CD and automation workflows that require browser-based testing along with AWS operations in a single, ready-to-use container.
 
 ---
-[![Build and Push Playwright + Azure CLI Image](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish.yml)
+[![Build and Push Playwright + AWS CLI Image](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish.yml/badge.svg?branch=aws)](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish.yml?branch=aws)
 ---
 
 ## 🔍 Overview
@@ -12,7 +12,7 @@ This image is intended for CI/CD and automation workflows that require browser-b
 CI pipelines often spend significant time installing:
 - Node.js
 - Playwright dependencies and browsers
-- Azure CLI
+- AWS CLI
 
 This image removes that overhead by shipping everything pre-baked, allowing pipelines to focus purely on **test execution** and **result handling**.
 
@@ -25,8 +25,8 @@ This image removes that overhead by shipping everything pre-baked, allowing pipe
   - Required system and browser dependencies
 - **Node.js & npm**
   - Version bundled and tested with Playwright
-- **Azure CLI**
-  - Ready for authentication and Azure resource operations
+- **AWS CLI v2**
+  - Ready for authentication and AWS resource operations
 - **Multi-architecture support**
   - `linux/amd64`
   - `linux/arm64` (Apple Silicon, ARM runners)
@@ -39,7 +39,7 @@ This image removes that overhead by shipping everything pre-baked, allowing pipe
 - Install Node
 - Install Playwright
 - Download browsers
-- Install Azure CLI  
+- Install AWS CLI  
 → Repeated on every pipeline run
 
 **After**
@@ -57,9 +57,10 @@ This image removes that overhead by shipping everything pre-baked, allowing pipe
 ## 🧪 Typical Use Cases
 
 - Playwright end-to-end automation
-- GitHub Actions / Azure DevOps / GitLab CI
-- Uploading test artifacts to Azure Storage
-- Azure-integrated testing and reporting workflows
+- GitHub Actions / AWS CodeBuild / GitLab CI
+- Uploading test artifacts to Amazon S3
+- AWS-integrated testing and reporting workflows
+- ECR image pushes and AWS deployment automation
 
 ---
 
@@ -68,7 +69,7 @@ This image removes that overhead by shipping everything pre-baked, allowing pipe
 - Versioned tags (e.g. `1.0.0`)
 - `latest` → most recent stable release
 
-Each tag is published as a **multi-architecture manifest**, so Docker automatically pulls the correct image for your platform. Also, I keep a version match against playwright image to avoid any confusion. However you may notice a minor version difference bcz of active maintenance.
+Each tag is published as a **multi-architecture manifest**, so Docker automatically pulls the correct image for your platform. Also, I keep a version match against the Playwright image to avoid confusion. However you may notice a minor version difference because of active maintenance.
 
 ---
 
@@ -87,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: aloknecessary/playwright-az-cli:latest
+      image: aloknecessary/playwright-aws-cli:latest
       options: --ipc=host --user root
 
     steps:
@@ -100,16 +101,11 @@ jobs:
       - name: Run Playwright tests
         run: npx playwright test --reporter=list,html
 
-      - name: Upload report to Azure Storage
+      - name: Upload report to S3
         if: always()
         run: |
-          az login --service-principal \
-            --username "${{ secrets.AZURE_CLIENT_ID }}" \
-            --password "${{ secrets.AZURE_CLIENT_SECRET }}" \
-            --tenant "${{ secrets.AZURE_TENANT_ID }}"
+          aws configure set aws_access_key_id "${{ secrets.AWS_ACCESS_KEY_ID }}"
+          aws configure set aws_secret_access_key "${{ secrets.AWS_SECRET_ACCESS_KEY }}"
+          aws configure set default.region "${{ secrets.AWS_REGION }}"
 
-          az storage blob upload-batch \
-            -d "playwright-reports/${{ github.run_id }}" \
-            -s ./playwright-report \
-            --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-            --overwrite
+          aws s3 cp ./playwright-report "s3://your-bucket/playwright-reports/${{ github.run_id }}/" --recursive
