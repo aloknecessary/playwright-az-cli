@@ -48,20 +48,19 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker image
+      - name: Build Docker image for smoke test
         uses: docker/build-push-action@v7.1.0
         with:
           context: .
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: false
           load: true
           tags: |
-            aloknecessary/playwright-aws-cli:${{ steps.version.outputs.version }}
-            aloknecessary/playwright-aws-cli:latest
+            aloknecessary/playwright-aws-cli:smoke-test
 
       - name: Smoke test AWS image
         run: |
-          docker run --rm aloknecessary/playwright-aws-cli:${{ steps.version.outputs.version }} bash -lc '
+          docker run --rm aloknecessary/playwright-aws-cli:smoke-test bash -lc '
             set -e
             echo "Node: $(node --version)"
             echo "npm: $(npm --version)"
