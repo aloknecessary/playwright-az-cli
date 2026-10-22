@@ -4,7 +4,7 @@ A custom Docker image built on top of the official **Microsoft Playwright** imag
 This image is intended for CI/CD and automation workflows that require browser-based testing along with AWS operations in a single, ready-to-use container.
 
 ---
-[![Build and Push Playwright + AWS CLI Image](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish.yml/badge.svg?branch=aws)](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish.yml?branch=aws)
+[![Build and Push Playwright + AWS CLI Image](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish-aws.yml/badge.svg)](https://github.com/aloknecessary/playwright-az-cli/actions/workflows/docker-publish-aws.yml)
 ---
 
 ## 🔍 Overview
